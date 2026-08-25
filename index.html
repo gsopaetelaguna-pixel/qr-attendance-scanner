@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>QR Attendance Scanner</title>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    #reader {
+      width: 100%;
+      margin: 15px auto;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 18px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #saveButton {
+      background: #1976d2;
+      color: white;
+    }
+
+    #scanAgainButton {
+      background: #555;
+      color: white;
+    }
+
+    #status {
+      display: none;
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .success {
+      display: block !important;
+      background: #dff5e1;
+      color: #176b20;
+    }
+
+    .error {
+      display: block !important;
+      background: #ffe0e0;
+      color: #a00000;
+    }
+
+    #quantitySection {
+      display: none;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>QR Attendance Scanner</h1>
+
+  <div id="reader"></div>
+
+  <div id="quantitySection">
+
+    <label>Scanned Code</label>
+
+    <input
+      type="text"
+      id="code"
+      readonly
+    >
+
+    <label>Quantity</label>
+
+    <input
+      type="number"
+      id="quantity"
+      value="1"
+      min="1"
+      inputmode="numeric"
+    >
+
+    <button
+      id="saveButton"
+      onclick="saveScan()">
+      SAVE SCAN
+    </button>
+
+    <button
+      id="scanAgainButton"
+      onclick="scanAgain()">
+      SCAN AGAIN
+    </button>
+
+  </div>
+
+  <div id="status"></div>
+
+</div>
+
+
+<script>
+
+let scanner = null;
+let scanning = false;
+
+
+/* ============================
+   START CAMERA
+============================ */
+
+function startScanner() {
+
+  scanner = new Html5Qrcode("reader");
+
+  const config = {
+    fps: 10,
+    qrbox: {
+      width: 250,
+      height: 250
+    }
+  };
+
+  scanner.start(
+    {
+      facingMode: "environment"
+    },
+    config,
+    function(decodedText) {
+
+      if (!scanning) return;
+
+      scanning = false;
+
+      document.getElementById("code").value =
+        decodedText;
+
+      document.getElementById("quantitySection")
+        .style.display = "block";
+
+      scanner.stop();
+
+    },
+    function(errorMessage) {
+      // Ignore normal scanning errors.
+    }
+
+  ).then(function() {
+
+    scanning = true;
+
+  }).catch(function(error) {
+
+    showStatus(
+      "Unable to start camera. Please allow camera access.",
+      false
+    );
+
+    console.error(error);
+
+  });
+
+}
+
+
+/* ============================
+   SAVE SCAN
+============================ */
+
+function saveScan() {
+
+  const code =
+    document.getElementById("code").value.trim();
+
+  const quantity =
+    document.getElementById("quantity").value;
+
+
+  if (!code) {
+
+    showStatus(
+      "No QR code detected.",
+      false
+    );
+
+    return;
+
+  }
+
+
+  if (!quantity || Number(quantity) <= 0) {
+
+    showStatus(
+      "Please enter a valid quantity.",
+      false
+    );
+
+    return;
+
+  }
+
+
+  const button =
+    document.getElementById("saveButton");
+
+  button.disabled = true;
+
+  button.innerText = "SAVING...";
+
+
+  /*
+    WE WILL CONNECT THIS
+    TO GOOGLE APPS SCRIPT
+    IN THE NEXT STEP.
+  */
+
+  showStatus(
+    "Scanner is working. Google Sheet connection comes next.",
+    true
+  );
+
+  button.disabled = false;
+
+  button.innerText = "SAVE SCAN";
+
+}
+
+
+/* ============================
+   SCAN AGAIN
+============================ */
+
+function scanAgain() {
+
+  document.getElementById("quantitySection")
+    .style.display = "none";
+
+  document.getElementById("status")
+    .style.display = "none";
+
+  document.getElementById("reader")
+    .innerHTML = "";
+
+  scanning = false;
+
+  startScanner();
+
+}
+
+
+/* ============================
+   STATUS
+============================ */
+
+function showStatus(message, success) {
+
+  const status =
+    document.getElementById("status");
+
+  status.innerText = message;
+
+  status.className =
+    success ? "success" : "error";
+
+}
+
+
+/* ============================
+   START
+============================ */
+
+window.onload = function() {
+
+  startScanner();
+
+};
+
+</script>
+
+</body>
+</html>

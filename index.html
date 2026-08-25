@@ -20,7 +20,7 @@
 
     body {
       margin: 0;
-      padding: 20px;
+      padding: 15px;
       font-family: Arial, sans-serif;
       background: #f2f2f2;
     }
@@ -29,25 +29,37 @@
       max-width: 500px;
       margin: auto;
       background: white;
-      padding: 20px;
+      padding: 18px;
       border-radius: 15px;
       box-shadow: 0 3px 12px rgba(0,0,0,0.15);
     }
 
     h1 {
       text-align: center;
-      margin-top: 0;
+      margin: 0 0 10px 0;
+      font-size: 24px;
+    }
+
+    #counter {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 12px;
     }
 
     #reader {
       width: 100%;
-      margin: 15px auto;
+      margin: 10px auto;
+    }
+
+    #quantitySection {
+      display: none;
     }
 
     label {
       display: block;
       font-weight: bold;
-      margin-top: 15px;
+      margin-top: 12px;
     }
 
     input {
@@ -59,10 +71,15 @@
       font-size: 18px;
     }
 
+    #quantity {
+      text-align: center;
+      font-weight: bold;
+    }
+
     button {
       width: 100%;
       padding: 15px;
-      margin-top: 15px;
+      margin-top: 12px;
       border: none;
       border-radius: 8px;
       font-size: 18px;
@@ -86,10 +103,11 @@
 
     #status {
       display: none;
-      margin-top: 15px;
+      margin-top: 12px;
       padding: 12px;
       border-radius: 8px;
       text-align: center;
+      font-weight: bold;
     }
 
     .success {
@@ -104,10 +122,6 @@
       color: #a00000;
     }
 
-    #quantitySection {
-      display: none;
-    }
-
   </style>
 
 </head>
@@ -118,6 +132,11 @@
 <div class="container">
 
   <h1>QR Attendance Scanner</h1>
+
+  <div id="counter">
+    Scans this session: 0
+  </div>
+
 
   <div id="reader"></div>
 
@@ -174,19 +193,7 @@
 
 /* =====================================================
    GOOGLE APPS SCRIPT WEB APP URL
-   =====================================================
-
-   REPLACE THE URL BELOW WITH YOUR ACTUAL
-   GOOGLE APPS SCRIPT WEB APP URL.
-
-   It should end with /exec.
-
-   Example:
-
-   https://script.google.com/macros/s/XXXXXXXX/exec
-
 ===================================================== */
-
 
 const scriptUrl =
   "https://script.google.com/macros/s/AKfycby8wgmD0iGMz4083SKiI-YEqs2Sdu9Fsdd4uwabF-C1aVPGpiAGBym723hiE9KWVbJPHQ/exec";
@@ -194,17 +201,19 @@ const scriptUrl =
 
 
 /* =====================================================
-   SCANNER VARIABLES
+   VARIABLES
 ===================================================== */
 
 let scanner = null;
 
 let scanning = false;
 
+let sessionScans = 0;
+
 
 
 /* =====================================================
-   START QR SCANNER
+   START SCANNER
 ===================================================== */
 
 function startScanner() {
@@ -248,6 +257,14 @@ function startScanner() {
         decodedText;
 
 
+      /*
+       * Quantity is automatically 1.
+       */
+
+      document.getElementById("quantity").value =
+        1;
+
+
       document.getElementById(
         "quantitySection"
       ).style.display = "block";
@@ -260,7 +277,7 @@ function startScanner() {
 
     function(errorMessage) {
 
-      // Normal QR scanning errors are ignored.
+      // Ignore normal QR scanning errors.
 
     }
 
@@ -315,16 +332,11 @@ function saveScan() {
 
 
 
-  /* CHECK CODE */
-
   if (!code) {
 
     showStatus(
-
       "No QR code detected.",
-
       false
-
     );
 
     return;
@@ -333,19 +345,11 @@ function saveScan() {
 
 
 
-  /* CHECK QUANTITY */
-
-  if (
-    !quantity ||
-    Number(quantity) <= 0
-  ) {
+  if (!quantity || Number(quantity) <= 0) {
 
     showStatus(
-
       "Please enter a valid quantity.",
-
       false
-
     );
 
     return;
@@ -353,8 +357,6 @@ function saveScan() {
   }
 
 
-
-  /* DISABLE BUTTON */
 
   const button =
     document.getElementById(
@@ -364,14 +366,13 @@ function saveScan() {
 
   button.disabled = true;
 
-
   button.innerText =
     "SAVING...";
 
 
 
   /* =================================================
-     BUILD GOOGLE APPS SCRIPT URL
+     SEND TO GOOGLE APPS SCRIPT
   ================================================= */
 
   const url =
@@ -388,15 +389,6 @@ function saveScan() {
 
 
 
-  /* =================================================
-     SEND DATA TO GOOGLE APPS SCRIPT
-  =================================================
-
-     We use an invisible image request
-     to avoid browser CORS problems.
-  ================================================= */
-
-
   const request =
     new Image();
 
@@ -404,82 +396,106 @@ function saveScan() {
 
   request.onload = function() {
 
-
-    showStatus(
-
-      "Scan saved successfully!",
-
-      true
-
+    successfulSave(
+      code,
+      quantity
     );
 
-
-    button.disabled = false;
-
-
-    button.innerText =
-      "SAVE SCAN";
-
-
-
-    /* CLEAR DATA */
-
-    document.getElementById(
-      "code"
-    ).value = "";
-
-
-    document.getElementById(
-      "quantity"
-    ).value = 1;
-
-
-
-    /* START NEXT SCAN */
-
-    setTimeout(function() {
-
-      scanAgain();
-
-    }, 1000);
-
   };
-
 
 
   request.onerror = function() {
 
-
     /*
-      The request may still have reached
-      Google Apps Script even if Safari
-      doesn't report the response.
+     * Apps Script may save the record even if
+     * Safari doesn't report the image response.
+     */
 
-      We therefore tell the user to verify
-      the Attendance Log.
-    */
-
-
-    showStatus(
-
-      "Scan sent. Please check Attendance Log.",
-
-      true
-
+    successfulSave(
+      code,
+      quantity
     );
-
-
-    button.disabled = false;
-
-
-    button.innerText =
-      "SAVE SCAN";
 
   };
 
 
-
   request.src = url;
+
+}
+
+
+
+/* =====================================================
+   SUCCESSFUL SAVE
+===================================================== */
+
+function successfulSave(
+  code,
+  quantity
+) {
+
+
+  sessionScans++;
+
+
+  document.getElementById(
+    "counter"
+  ).innerText =
+
+    "Scans this session: " +
+    sessionScans;
+
+
+
+  showStatus(
+
+    "✓ Saved: " +
+    code +
+    " — Qty " +
+    quantity,
+
+    true
+
+  );
+
+
+  const button =
+    document.getElementById(
+      "saveButton"
+    );
+
+
+  button.disabled = false;
+
+  button.innerText =
+    "SAVE SCAN";
+
+
+
+  /*
+   * Clear previous scan.
+   */
+
+  document.getElementById(
+    "code"
+  ).value = "";
+
+
+  document.getElementById(
+    "quantity"
+  ).value = 1;
+
+
+
+  /*
+   * Automatically return to scanner.
+   */
+
+  setTimeout(function() {
+
+    scanAgain();
+
+  }, 700);
 
 }
 
@@ -491,8 +507,6 @@ function saveScan() {
 
 function scanAgain() {
 
-
-  /* STOP OLD SCANNER */
 
   if (scanner) {
 
@@ -511,36 +525,23 @@ function scanAgain() {
   }
 
 
-
-  /* HIDE QUANTITY SECTION */
-
   document.getElementById(
     "quantitySection"
   ).style.display = "none";
 
-
-
-  /* HIDE STATUS */
 
   document.getElementById(
     "status"
   ).style.display = "none";
 
 
-
-  /* CLEAR CAMERA AREA */
-
   document.getElementById(
     "reader"
   ).innerHTML = "";
 
 
-
   scanning = false;
 
-
-
-  /* START NEW SCANNER */
 
   startScanner();
 
@@ -549,7 +550,7 @@ function scanAgain() {
 
 
 /* =====================================================
-   STATUS MESSAGE
+   STATUS
 ===================================================== */
 
 function showStatus(
@@ -578,7 +579,7 @@ function showStatus(
 
 
 /* =====================================================
-   START WHEN PAGE LOADS
+   START PAGE
 ===================================================== */
 
 window.onload = function() {

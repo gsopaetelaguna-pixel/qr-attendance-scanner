@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
 
   <meta name="viewport"
@@ -11,6 +13,7 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
+
     * {
       box-sizing: border-box;
     }
@@ -64,11 +67,16 @@
       border-radius: 8px;
       font-size: 18px;
       font-weight: bold;
+      cursor: pointer;
     }
 
     #saveButton {
       background: #1976d2;
       color: white;
+    }
+
+    #saveButton:disabled {
+      background: #999;
     }
 
     #scanAgainButton {
@@ -99,8 +107,11 @@
     #quantitySection {
       display: none;
     }
+
   </style>
+
 </head>
+
 
 <body>
 
@@ -109,6 +120,7 @@
   <h1>QR Attendance Scanner</h1>
 
   <div id="reader"></div>
+
 
   <div id="quantitySection">
 
@@ -120,6 +132,7 @@
       readonly
     >
 
+
     <label>Quantity</label>
 
     <input
@@ -130,49 +143,96 @@
       inputmode="numeric"
     >
 
+
     <button
       id="saveButton"
       onclick="saveScan()">
+
       SAVE SCAN
+
     </button>
+
 
     <button
       id="scanAgainButton"
       onclick="scanAgain()">
+
       SCAN AGAIN
+
     </button>
 
   </div>
+
 
   <div id="status"></div>
 
 </div>
 
+
 <script>
 
+
+/* =====================================================
+   GOOGLE APPS SCRIPT WEB APP URL
+   =====================================================
+
+   REPLACE THE URL BELOW WITH YOUR ACTUAL
+   GOOGLE APPS SCRIPT WEB APP URL.
+
+   It should end with /exec.
+
+   Example:
+
+   https://script.google.com/macros/s/XXXXXXXX/exec
+
+===================================================== */
+
+
+const scriptUrl =
+  "https://script.google.com/macros/s/AKfycby8wgmD0iGMz4083SKiI-YEqs2Sdu9Fsdd4uwabF-C1aVPGpiAGBym723hiE9KWVbJPHQ/exec";
+
+
+
+/* =====================================================
+   SCANNER VARIABLES
+===================================================== */
+
 let scanner = null;
+
 let scanning = false;
 
 
-/* START QR SCANNER */
+
+/* =====================================================
+   START QR SCANNER
+===================================================== */
 
 function startScanner() {
 
-  scanner = new Html5Qrcode("reader");
+  scanner =
+    new Html5Qrcode("reader");
+
 
   const config = {
+
     fps: 10,
+
     qrbox: {
       width: 250,
       height: 250
     }
+
   };
 
+
   scanner.start(
+
     {
       facingMode: "environment"
     },
+
     config,
+
 
     function(decodedText) {
 
@@ -180,35 +240,53 @@ function startScanner() {
         return;
       }
 
+
       scanning = false;
+
 
       document.getElementById("code").value =
         decodedText;
 
-      document.getElementById("quantitySection")
-        .style.display = "block";
+
+      document.getElementById(
+        "quantitySection"
+      ).style.display = "block";
+
 
       scanner.stop();
 
     },
 
+
     function(errorMessage) {
-      // Ignore normal QR scanning errors.
+
+      // Normal QR scanning errors are ignored.
+
     }
 
   )
+
   .then(function() {
 
     scanning = true;
 
   })
+
   .catch(function(error) {
 
-    console.error(error);
+    console.error(
+      "Camera error:",
+      error
+    );
+
 
     showStatus(
-      "Unable to start camera. Please allow camera access.",
+
+      "Unable to start camera. " +
+      "Please allow camera access.",
+
       false
+
     );
 
   });
@@ -216,90 +294,292 @@ function startScanner() {
 }
 
 
-/* SAVE SCAN — TEMPORARY TEST */
+
+/* =====================================================
+   SAVE SCAN
+===================================================== */
 
 function saveScan() {
 
+
   const code =
-    document.getElementById("code").value.trim();
+    document.getElementById(
+      "code"
+    ).value.trim();
+
 
   const quantity =
-    document.getElementById("quantity").value;
+    document.getElementById(
+      "quantity"
+    ).value;
+
+
+
+  /* CHECK CODE */
 
   if (!code) {
 
     showStatus(
+
       "No QR code detected.",
+
       false
+
     );
 
     return;
+
   }
 
-  if (!quantity || Number(quantity) <= 0) {
+
+
+  /* CHECK QUANTITY */
+
+  if (
+    !quantity ||
+    Number(quantity) <= 0
+  ) {
 
     showStatus(
+
       "Please enter a valid quantity.",
+
       false
+
     );
 
     return;
+
   }
 
-  showStatus(
-    "Scanner is working. Sheet connection will be added next.",
-    true
-  );
+
+
+  /* DISABLE BUTTON */
+
+  const button =
+    document.getElementById(
+      "saveButton"
+    );
+
+
+  button.disabled = true;
+
+
+  button.innerText =
+    "SAVING...";
+
+
+
+  /* =================================================
+     BUILD GOOGLE APPS SCRIPT URL
+  ================================================= */
+
+  const url =
+
+    scriptUrl +
+
+    "?code=" +
+
+    encodeURIComponent(code) +
+
+    "&quantity=" +
+
+    encodeURIComponent(quantity);
+
+
+
+  /* =================================================
+     SEND DATA TO GOOGLE APPS SCRIPT
+  =================================================
+
+     We use an invisible image request
+     to avoid browser CORS problems.
+  ================================================= */
+
+
+  const request =
+    new Image();
+
+
+
+  request.onload = function() {
+
+
+    showStatus(
+
+      "Scan saved successfully!",
+
+      true
+
+    );
+
+
+    button.disabled = false;
+
+
+    button.innerText =
+      "SAVE SCAN";
+
+
+
+    /* CLEAR DATA */
+
+    document.getElementById(
+      "code"
+    ).value = "";
+
+
+    document.getElementById(
+      "quantity"
+    ).value = 1;
+
+
+
+    /* START NEXT SCAN */
+
+    setTimeout(function() {
+
+      scanAgain();
+
+    }, 1000);
+
+  };
+
+
+
+  request.onerror = function() {
+
+
+    /*
+      The request may still have reached
+      Google Apps Script even if Safari
+      doesn't report the response.
+
+      We therefore tell the user to verify
+      the Attendance Log.
+    */
+
+
+    showStatus(
+
+      "Scan sent. Please check Attendance Log.",
+
+      true
+
+    );
+
+
+    button.disabled = false;
+
+
+    button.innerText =
+      "SAVE SCAN";
+
+  };
+
+
+
+  request.src = url;
 
 }
 
 
-/* SCAN AGAIN */
+
+/* =====================================================
+   SCAN AGAIN
+===================================================== */
 
 function scanAgain() {
+
+
+  /* STOP OLD SCANNER */
 
   if (scanner) {
 
     try {
+
       scanner.stop();
-    } catch (e) {
-      console.log(e);
+
+    }
+
+    catch (error) {
+
+      console.log(error);
+
     }
 
   }
 
-  document.getElementById("quantitySection")
-    .style.display = "none";
 
-  document.getElementById("status")
-    .style.display = "none";
 
-  document.getElementById("reader")
-    .innerHTML = "";
+  /* HIDE QUANTITY SECTION */
+
+  document.getElementById(
+    "quantitySection"
+  ).style.display = "none";
+
+
+
+  /* HIDE STATUS */
+
+  document.getElementById(
+    "status"
+  ).style.display = "none";
+
+
+
+  /* CLEAR CAMERA AREA */
+
+  document.getElementById(
+    "reader"
+  ).innerHTML = "";
+
+
 
   scanning = false;
+
+
+
+  /* START NEW SCANNER */
 
   startScanner();
 
 }
 
 
-/* STATUS */
 
-function showStatus(message, success) {
+/* =====================================================
+   STATUS MESSAGE
+===================================================== */
+
+function showStatus(
+  message,
+  success
+) {
+
 
   const status =
-    document.getElementById("status");
+    document.getElementById(
+      "status"
+    );
 
-  status.innerText = message;
+
+  status.innerText =
+    message;
+
 
   status.className =
-    success ? "success" : "error";
+    success
+      ? "success"
+      : "error";
 
 }
 
 
-/* START WHEN PAGE LOADS */
+
+/* =====================================================
+   START WHEN PAGE LOADS
+===================================================== */
 
 window.onload = function() {
 
@@ -307,7 +587,9 @@ window.onload = function() {
 
 };
 
+
 </script>
 
 </body>
+
 </html>

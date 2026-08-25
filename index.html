@@ -11,7 +11,6 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
-
     * {
       box-sizing: border-box;
     }
@@ -100,9 +99,7 @@
     #quantitySection {
       display: none;
     }
-
   </style>
-
 </head>
 
 <body>
@@ -151,16 +148,13 @@
 
 </div>
 
-
 <script>
 
 let scanner = null;
 let scanning = false;
 
 
-/* ============================
-   START CAMERA
-============================ */
+/* START QR SCANNER */
 
 function startScanner() {
 
@@ -179,9 +173,12 @@ function startScanner() {
       facingMode: "environment"
     },
     config,
+
     function(decodedText) {
 
-      if (!scanning) return;
+      if (!scanning) {
+        return;
+      }
 
       scanning = false;
 
@@ -194,31 +191,32 @@ function startScanner() {
       scanner.stop();
 
     },
+
     function(errorMessage) {
-      // Ignore normal scanning errors.
+      // Ignore normal QR scanning errors.
     }
 
-  ).then(function() {
+  )
+  .then(function() {
 
     scanning = true;
 
-  }).catch(function(error) {
+  })
+  .catch(function(error) {
+
+    console.error(error);
 
     showStatus(
       "Unable to start camera. Please allow camera access.",
       false
     );
 
-    console.error(error);
-
   });
 
 }
 
 
-/* ============================
-   SAVE SCAN
-============================ */
+/* SAVE SCAN — TEMPORARY TEST */
 
 function saveScan() {
 
@@ -228,7 +226,6 @@ function saveScan() {
   const quantity =
     document.getElementById("quantity").value;
 
-
   if (!code) {
 
     showStatus(
@@ -237,9 +234,7 @@ function saveScan() {
     );
 
     return;
-
   }
-
 
   if (!quantity || Number(quantity) <= 0) {
 
@@ -249,149 +244,29 @@ function saveScan() {
     );
 
     return;
-
   }
-
-
-  const button =
-    document.getElementById("saveButton");
-
-  button.disabled = true;
-
-  button.innerText = "SAVING...";
-
-
-  /*
-   * YOUR GOOGLE APPS SCRIPT WEB APP URL
-   *
-   * Replace the text below with the Web App URL
-   * you found earlier.
-   */
-
-  const scriptUrl =
-    "https://script.google.com/macros/s/AKfycby8wgmD0iGMz4083SKiI-YEqs2Sdu9Fsdd4uwabF-C1aVPGpiAGBym723hiE9KWVbJPHQ/exec";
-
-
-  fetch(scriptUrl, {
-
-    method: "POST",
-
-    body: JSON.stringify({
-      code: code,
-      quantity: Number(quantity)
-    })
-
-  })
-
-  .then(function(response) {
-
-    return response.json();
-
-  })
-
-  .then(function(result) {
-
-    if (!result.success) {
-
-      throw new Error(
-        result.message || "Unable to save scan."
-      );
-
-    }
-
-
-    showStatus(
-      "Scan saved successfully!",
-      true
-    );
-
-
-    button.disabled = false;
-
-    button.innerText = "SAVE SCAN";
-
-
-    document.getElementById("code").value = "";
-
-    document.getElementById("quantity").value = 1;
-
-
-    /*
-     * Automatically prepare
-     * for another QR scan.
-     */
-
-    setTimeout(function() {
-
-      scanAgain();
-
-    }, 1000);
-
-  })
-
-  .catch(function(error) {
-
-    console.error(error);
-
-
-    showStatus(
-      "Unable to save scan: " +
-      error.message,
-      false
-    );
-
-
-    button.disabled = false;
-
-    button.innerText = "SAVE SCAN";
-
-  });
-
-}
-
-  if (!quantity || Number(quantity) <= 0) {
-
-    showStatus(
-      "Please enter a valid quantity.",
-      false
-    );
-
-    return;
-
-  }
-
-
-  const button =
-    document.getElementById("saveButton");
-
-  button.disabled = true;
-
-  button.innerText = "SAVING...";
-
-
-  /*
-    WE WILL CONNECT THIS
-    TO GOOGLE APPS SCRIPT
-    IN THE NEXT STEP.
-  */
 
   showStatus(
-    "Scanner is working. Google Sheet connection comes next.",
+    "Scanner is working. Sheet connection will be added next.",
     true
   );
 
-  button.disabled = false;
-
-  button.innerText = "SAVE SCAN";
-
 }
 
 
-/* ============================
-   SCAN AGAIN
-============================ */
+/* SCAN AGAIN */
 
 function scanAgain() {
+
+  if (scanner) {
+
+    try {
+      scanner.stop();
+    } catch (e) {
+      console.log(e);
+    }
+
+  }
 
   document.getElementById("quantitySection")
     .style.display = "none";
@@ -409,9 +284,7 @@ function scanAgain() {
 }
 
 
-/* ============================
-   STATUS
-============================ */
+/* STATUS */
 
 function showStatus(message, success) {
 
@@ -426,9 +299,7 @@ function showStatus(message, success) {
 }
 
 
-/* ============================
-   START
-============================ */
+/* START WHEN PAGE LOADS */
 
 window.onload = function() {
 

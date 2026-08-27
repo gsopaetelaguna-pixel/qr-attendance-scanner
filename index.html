@@ -137,7 +137,6 @@
     Scans this session: 0
   </div>
 
-
   <div id="reader"></div>
 
 
@@ -151,7 +150,6 @@
       readonly
     >
 
-
     <label>Quantity</label>
 
     <input
@@ -162,7 +160,6 @@
       inputmode="numeric"
     >
 
-
     <button
       id="saveButton"
       onclick="saveScan()">
@@ -170,7 +167,6 @@
       SAVE SCAN
 
     </button>
-
 
     <button
       id="scanAgainButton"
@@ -190,14 +186,12 @@
 
 <script>
 
-
 /* =====================================================
    GOOGLE APPS SCRIPT WEB APP URL
 ===================================================== */
 
 const scriptUrl =
   "https://script.google.com/macros/s/AKfycby8wgmD0iGMz4083SKiI-YEqs2Sdu9Fsdd4uwabF-C1aVPGpiAGBym723hiE9KWVbJPHQ/exec";
-
 
 
 /* =====================================================
@@ -209,7 +203,6 @@ let scanner = null;
 let scanning = false;
 
 let sessionScans = 0;
-
 
 
 /* =====================================================
@@ -257,10 +250,6 @@ function startScanner() {
         decodedText;
 
 
-      /*
-       * Quantity is automatically 1.
-       */
-
       document.getElementById("quantity").value =
         1;
 
@@ -277,7 +266,7 @@ function startScanner() {
 
     function(errorMessage) {
 
-      // Ignore normal QR scanning errors.
+      // Normal QR scanning errors are ignored.
 
     }
 
@@ -311,7 +300,6 @@ function startScanner() {
 }
 
 
-
 /* =====================================================
    SAVE SCAN
 ===================================================== */
@@ -333,6 +321,7 @@ function saveScan() {
     );
 
     return;
+
   }
 
 
@@ -344,6 +333,7 @@ function saveScan() {
     );
 
     return;
+
   }
 
 
@@ -352,7 +342,9 @@ function saveScan() {
 
 
   button.disabled = true;
-  button.innerText = "SAVING...";
+
+  button.innerText =
+    "SAVING...";
 
 
   const url =
@@ -392,12 +384,15 @@ function saveScan() {
 
     let result;
 
+
     try {
 
       result =
         JSON.parse(text);
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       throw new Error(
         "Invalid response from Apps Script."
@@ -432,7 +427,9 @@ function saveScan() {
 
 
     button.disabled = false;
-    button.innerText = "SAVE SCAN";
+
+    button.innerText =
+      "SAVE SCAN";
 
 
     showStatus(
@@ -449,87 +446,6 @@ function saveScan() {
 }
 
 
-
-  if (!quantity || Number(quantity) <= 0) {
-
-    showStatus(
-      "Please enter a valid quantity.",
-      false
-    );
-
-    return;
-
-  }
-
-
-
-  const button =
-    document.getElementById(
-      "saveButton"
-    );
-
-
-  button.disabled = true;
-
-  button.innerText =
-    "SAVING...";
-
-
-
-  /* =================================================
-     SEND TO GOOGLE APPS SCRIPT
-  ================================================= */
-
-  const url =
-
-    scriptUrl +
-
-    "?code=" +
-
-    encodeURIComponent(code) +
-
-    "&quantity=" +
-
-    encodeURIComponent(quantity);
-
-
-
-  const request =
-    new Image();
-
-
-
-  request.onload = function() {
-
-    successfulSave(
-      code,
-      quantity
-    );
-
-  };
-
-
-  request.onerror = function() {
-
-    /*
-     * Apps Script may save the record even if
-     * Safari doesn't report the image response.
-     */
-
-    successfulSave(
-      code,
-      quantity
-    );
-
-  };
-
-
-  request.src = url;
-
-}
-
-
-
 /* =====================================================
    SUCCESSFUL SAVE
 ===================================================== */
@@ -538,7 +454,6 @@ function successfulSave(
   code,
   quantity
 ) {
-
 
   sessionScans++;
 
@@ -549,7 +464,6 @@ function successfulSave(
 
     "Scans this session: " +
     sessionScans;
-
 
 
   showStatus(
@@ -576,11 +490,6 @@ function successfulSave(
     "SAVE SCAN";
 
 
-
-  /*
-   * Clear previous scan.
-   */
-
   document.getElementById(
     "code"
   ).value = "";
@@ -591,11 +500,6 @@ function successfulSave(
   ).value = 1;
 
 
-
-  /*
-   * Automatically return to scanner.
-   */
-
   setTimeout(function() {
 
     scanAgain();
@@ -605,13 +509,11 @@ function successfulSave(
 }
 
 
-
 /* =====================================================
    SCAN AGAIN
 ===================================================== */
 
 function scanAgain() {
-
 
   if (scanner) {
 
@@ -653,7 +555,6 @@ function scanAgain() {
 }
 
 
-
 /* =====================================================
    STATUS
 ===================================================== */
@@ -662,7 +563,6 @@ function showStatus(
   message,
   success
 ) {
-
 
   const status =
     document.getElementById(
@@ -682,7 +582,6 @@ function showStatus(
 }
 
 
-
 /* =====================================================
    START PAGE
 ===================================================== */
@@ -692,7 +591,6 @@ window.onload = function() {
   startScanner();
 
 };
-
 
 </script>
 
